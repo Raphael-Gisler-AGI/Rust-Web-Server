@@ -2,4 +2,29 @@ body {
   font-family: Arial, Helvetica, sans-serif;
   background-color: rgb(24, 24, 24);
   color: white;
+  margin: 0;
+}
+
+#game {
+  --fieldWidth: 50px;
+  display: grid;
+  grid-template-columns: repeat(20, var(--fieldWidth));
+}
+
+#game div {
+  width: var(--fieldWidth);
+  height: var(--fieldWidth);
+  border: 1px solid black;
+}
+
+.enabled {
+  background-color: rgb(0, 0, 0);
+}
+
+.disabled {
+  background-color: rgb(255, 255, 255);
+}
+
+.selected {
+  background-color: red;
 }

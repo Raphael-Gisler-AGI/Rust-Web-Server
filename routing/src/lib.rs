@@ -1,4 +1,89 @@
-use std::io::{Error, ErrorKind};
+use std::{char, io::{BufRead, BufReader, Error, ErrorKind}, net::TcpStream};
+
+pub struct Request {
+    pub request_line: String,
+    pub content_type: Option<String>,
+    pub user_agent: Option<String>,
+    pub accept: Option<String>,
+    pub cache_control: Option<String>,
+    pub postman_token: Option<String>,
+    pub host: Option<String>,
+    pub accept_encoding: Option<String>,
+    pub connection: Option<String>,
+    pub content_length: Option<usize>,
+    pub body: Vec<char>
+}
+
+//"Content-Type: application/json"
+//"User-Agent: PostmanRuntime/7.37.3"
+//"Accept: */*"
+//"Cache-Control: no-cache"
+//"Postman-Token: d6c96c69-79a7-4489-9cf4-4a0a63003390"
+//"Host: localhost:7878"
+//"Accept-Encoding: gzip, deflate, br"
+//"Connection: keep-alive"
+//"Content-Length: 49"
+
+impl Request {
+    pub fn new(buf_reader: BufReader<&mut TcpStream>) -> Request {
+        let mut lines = buf_reader.lines();
+
+        let request_line = lines.next().unwrap().unwrap();
+        let mut request = Request {
+            request_line, content_type:None, user_agent:None, accept:None,
+            cache_control:None, postman_token:None, host:None,
+            accept_encoding:None, connection:None, content_length:None,
+            body: Vec::new()
+        };
+
+        loop {
+            let line = lines.next().unwrap().unwrap();
+            println!("{:?}", line);
+            if line == "" {
+                break;
+            }
+            let mut split = line.split(": ");
+            let property = split.next().unwrap();
+            let value = split.next().unwrap();
+            Self::set_property_by_string(&mut request, property, value.to_string());
+        }
+
+        if request.content_length == None {
+            return request;
+        }
+
+        let length: usize = request.content_length.unwrap();
+
+        let mut counter = 0;
+
+        while counter < length {
+            // " at the start and end of the line
+            counter += 2;
+            let line = lines.next().unwrap().unwrap();
+            for c in line.chars() {
+                counter += 1;
+                request.body.push(c);
+            }
+        }
+
+        request
+    }
+
+    fn set_property_by_string(&mut self, property: &str, value: String) {
+        match property {
+            "Content-Type" => self.content_type = Some(value),
+            "User-Agent" => self.user_agent = Some(value),
+            "Accept" => self.user_agent = Some(value),
+            "Cache-Control" => self.cache_control = Some(value),
+            "Postman-Token" => self.postman_token = Some(value),
+            "Host" => self.host = Some(value),
+            "Accept-Encoding" => self.accept_encoding = Some(value),
+            "Connection" => self.connection = Some(value),
+            "Content-Length" => self.content_length = Some(value.parse().unwrap()),
+            _ => ()
+        }
+    }
+}
 
 pub enum Status {
     OK,

@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 routing = { path = "routing" }
+serde_json = "=1.0.1"
