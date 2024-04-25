@@ -45,8 +45,11 @@ function onClickField({ target }) {
 }
 
 saveButton.addEventListener('click', async () => {
-  await fetch(`${BASE_URL}/game`, {
+  const body = JSON.stringify([...changedFields]);
+  debugger
+  const res = await fetch(`${BASE_URL}/game`, {
     method: "UPDATE",
-    body: JSON.stringify(changedFields)
+    body: body
   })
+  debugger
 })

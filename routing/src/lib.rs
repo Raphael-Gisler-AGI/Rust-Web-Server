@@ -1,7 +1,25 @@
-use std::{char, io::{BufRead, BufReader, Error, ErrorKind}, net::TcpStream};
+use std::io::{Error, ErrorKind};
+
+pub struct RequestLine {
+    pub method: Method,
+    pub path: String,
+    pub http_version: String
+}
+impl RequestLine {
+    pub fn new(request_line: String) -> RequestLine {
+        let mut request_arr = request_line.split(" ");
+
+        let method_string = request_arr.next().unwrap();
+        let method = Method::from_str(&method_string).unwrap();
+        let path = request_arr.next().unwrap().to_string();
+        let http_version = request_arr.next().unwrap().to_string();
+
+        RequestLine { method, path, http_version }
+    }
+}
 
 pub struct Request {
-    pub request_line: String,
+    pub request_line: RequestLine,
     pub content_type: Option<String>,
     pub user_agent: Option<String>,
     pub accept: Option<String>,
@@ -11,37 +29,27 @@ pub struct Request {
     pub accept_encoding: Option<String>,
     pub connection: Option<String>,
     pub content_length: Option<usize>,
-    pub body: Vec<char>
+    pub body: Option<String>
 }
 
-//"Content-Type: application/json"
-//"User-Agent: PostmanRuntime/7.37.3"
-//"Accept: */*"
-//"Cache-Control: no-cache"
-//"Postman-Token: d6c96c69-79a7-4489-9cf4-4a0a63003390"
-//"Host: localhost:7878"
-//"Accept-Encoding: gzip, deflate, br"
-//"Connection: keep-alive"
-//"Content-Length: 49"
-
 impl Request {
-    pub fn new(buf_reader: BufReader<&mut TcpStream>) -> Request {
-        let mut lines = buf_reader.lines();
+    pub fn new(buffer: &[u8]) -> Request {
+        let request_as_string = String::from_utf8_lossy(buffer);
 
-        let request_line = lines.next().unwrap().unwrap();
+        let mut parts = request_as_string.split("\r\n\r\n");
+        let mut head = parts.next().unwrap().split("\r\n");
+
+        let request_line = head.next().unwrap().to_string();
+
         let mut request = Request {
-            request_line, content_type:None, user_agent:None, accept:None,
+            request_line: RequestLine::new(request_line),
+            content_type:None, user_agent:None, accept:None,
             cache_control:None, postman_token:None, host:None,
             accept_encoding:None, connection:None, content_length:None,
-            body: Vec::new()
+            body: None
         };
 
-        loop {
-            let line = lines.next().unwrap().unwrap();
-            println!("{:?}", line);
-            if line == "" {
-                break;
-            }
+        for line in head.into_iter() {
             let mut split = line.split(": ");
             let property = split.next().unwrap();
             let value = split.next().unwrap();
@@ -52,18 +60,9 @@ impl Request {
             return request;
         }
 
-        let length: usize = request.content_length.unwrap();
-
-        let mut counter = 0;
-
-        while counter < length {
-            // " at the start and end of the line
-            counter += 2;
-            let line = lines.next().unwrap().unwrap();
-            for c in line.chars() {
-                counter += 1;
-                request.body.push(c);
-            }
+        if let Some(body) = parts.next() {
+            let length: usize = request.content_length.unwrap();
+            request.body = Some(body.chars().take(length).collect());
         }
 
         request
