@@ -20,8 +20,6 @@ fn handle_connection(mut stream: TcpStream) {
     let _ = stream.read(&mut buffer).unwrap();
     let request = Request::new(&buffer);
 
-    println!("{:?}", request.body);
-
     let routes: Routes = Routes::new()
         .get("/game", routes::get_game)
         .patch("/game", routes::update_game)

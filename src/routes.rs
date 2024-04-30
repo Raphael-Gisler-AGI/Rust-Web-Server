@@ -1,6 +1,6 @@
 use std::fs;
 
-use super::{Response, Status};
+use crate::{Response,Status};
 
 static mut GAME: [[bool;20];20] = [[false;20];20];
 
