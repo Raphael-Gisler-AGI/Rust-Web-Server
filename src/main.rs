@@ -1,6 +1,6 @@
 use std::{io::{Read, Write}, net::{TcpListener, TcpStream}};
 
-use routing::{Method, Routes, Status, Response, Request};
+use routing::{Routes, Status, Response, Request};
 
 mod routes;
 
@@ -23,16 +23,13 @@ fn handle_connection(mut stream: TcpStream) {
     println!("{:?}", request.body);
 
     let routes: Routes = Routes::new()
-        .add("/game", Method::GET, routes::get_game)
-        .add("/game", Method::UPDATE, routes::update_game)
-        .add("/", Method::GET, routes::get_index)
-        .add("/script.js", Method::GET, routes::get_script)
-        .add("/styles.css", Method::GET, routes::get_styles);
+        .get("/game", routes::get_game)
+        .patch("/game", routes::update_game)
+        .get("/", routes::get_index)
+        .get("/script.js", routes::get_script)
+        .get("/styles.css", routes::get_styles);
 
-    let res: Response = routes.route(
-        &request.request_line.path,
-        request.request_line.method
-    );
+    let res: Response = routes.route(request);
 
     let response = format!("{}\r\nContent-Length: {}\r\n\r\n{}",
         res.status.get_response_line(),

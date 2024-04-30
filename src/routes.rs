@@ -33,8 +33,9 @@ pub fn get_game() -> Response {
     Response::new(content, Status::OK)
 }
 
-pub fn update_game() -> Response {
-    Response::new("".to_string(), Status::OK)
+pub fn update_game(body: Option<String>) -> Response {
+    let response_message = format!("from update_game {}", body.unwrap());
+    Response::new(response_message, Status::OK)
 }
 
 fn get_static_game() -> [[bool;20];20] {
