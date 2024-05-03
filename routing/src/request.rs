@@ -1,4 +1,4 @@
-use crate::method::Method;
+use crate::{method::Method, Response, Status};
 
 pub struct Request {
     pub request_line: RequestLine,
@@ -15,13 +15,17 @@ pub struct Request {
 }
 
 impl Request {
-    pub fn new(buffer: &[u8]) -> Request {
+    pub fn new(buffer: &[u8]) -> Result<Request, Response> {
         let request_as_string = String::from_utf8_lossy(buffer);
 
         let mut parts = request_as_string.split("\r\n\r\n");
         let mut head = parts.next().unwrap().split("\r\n");
 
         let request_line = head.next().unwrap().to_string();
+
+        if request_line == "" {
+            return Err(Response::new("Request Line not found".to_string(), Status::BADREQUEST));
+        }
 
         let mut request = Request {
             request_line: RequestLine::new(request_line),
@@ -39,7 +43,7 @@ impl Request {
         }
 
         if request.content_length == None {
-            return request;
+            return Ok(request);
         }
 
         if let Some(body) = parts.next() {
@@ -47,7 +51,7 @@ impl Request {
             request.body = Some(body.chars().take(length).collect());
         }
 
-        request
+        Ok(request)
     }
 
     fn set_property_by_string(&mut self, property: &str, value: String) {

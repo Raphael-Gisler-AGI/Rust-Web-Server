@@ -2,6 +2,7 @@ function getId (id) { return document.getElementById(id) };
 
 const gameElement = getId("game");
 const saveButton = getId("saveButton");
+const resetButton = getId("resetButton");
 
 const changedFields = new Set();
 
@@ -17,6 +18,7 @@ window.onload = async () => {
   * @param {boolean[][]} game 
  */
 function displayGame(game) {
+  gameElement.innerHTML = '';
   let id = 0;
   game.forEach((column) => {
     column.forEach((field) => {
@@ -34,7 +36,7 @@ function displayGame(game) {
   * @param {Event} e 
   */
 function onClickField({ target }) {
-  const id = target.getAttribute("id");
+  const id = parseInt(target.getAttribute("id"));
   if (changedFields.has(id)) {
     changedFields.delete(id);
     target.classList.remove('selected');
@@ -46,10 +48,21 @@ function onClickField({ target }) {
 
 saveButton.addEventListener('click', async () => {
   const body = JSON.stringify([...changedFields]);
-  debugger
   const res = await fetch(`${BASE_URL}/game`, {
-    method: "UPDATE",
+    method: "PATCH",
     body: body
-  })
-  debugger
+  });
+  const updatedGame = await res.json();
+  changedFields.clear();
+  displayGame(updatedGame);
 })
+
+resetButton.addEventListener('click', async () => {
+  const res = await fetch(`${BASE_URL}/reset`, {
+    method: "DELETE"
+  });
+  const updatedGame = await res.json();
+  changedFields.clear();
+  displayGame(updatedGame);
+})
+

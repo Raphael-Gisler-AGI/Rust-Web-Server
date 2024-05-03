@@ -18,16 +18,21 @@ fn main() {
 fn handle_connection(mut stream: TcpStream) {
     let mut buffer = [0;1024];
     let _ = stream.read(&mut buffer).unwrap();
-    let request = Request::new(&buffer);
 
     let routes: Routes = Routes::new()
         .get("/game", routes::get_game)
         .patch("/game", routes::update_game)
+        .delete("/reset", routes::reset_game)
         .get("/", routes::get_index)
         .get("/script.js", routes::get_script)
         .get("/styles.css", routes::get_styles);
 
-    let res: Response = routes.route(request);
+    let request = Request::new(&buffer);
+
+    let res: Response = match request {
+        Ok(req) => routes.route(req),
+        Err(req) => req
+    };
 
     let response = format!("{}\r\nContent-Length: {}\r\n\r\n{}",
         res.status.get_response_line(),
